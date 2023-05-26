@@ -4,7 +4,6 @@ from tkinter import filedialog
 import subprocess
 import sys
 import os
-from moviepy.video.io.VideoFileClip import VideoFileClip #The line that adds 43mb to the exe size >:(
 
 print("Opening GUI...")
 
@@ -67,7 +66,7 @@ def compressVideo():
     if outputName == '':
         outputName = os.path.basename(filename) + "_Compressed"
 
-    subprocess.run(["ffmpeg.exe", "-i", filename, "-c:v", "libx264", "-preset", preset, "-crf", "22", "-c:a", "copy", f"{outputDest}/{outputName}.mp4"], shell=True)
+    subprocess.run(["ffmpeg", "-i", filename, "-c:v", "libx264", "-preset", preset, "-crf", "22", "-c:a", "copy", f"{outputDest}/{outputName}.mp4"], shell=True)
 
     print("------------------")
     print("Video compressed!")
@@ -78,31 +77,28 @@ def resize():
     global outputDest
 
     preset = presetVar.get()
-
     #inputSize = sys.getsizeof(filename) #returns bytes
     outputSize = float(entry_outputSize.get())
 
     #audioBitrate = 64 if outputSize < 0.15  else 128 #reduces audio bitrate if outputting below certain size
-    
     audioBitrate = float(entry_audioBitrate.get())
 
-    #if audioBitrate == '':
-    #    audioBitrate = 128
+    #validation
     if audioBitrate > 512:
         print("Audio bitrate too high! Maximum bitrate is 512kbps.")
         return
-
     if filename == "":
         print("ERROR - NO INPUT FILE.")
         return
-
     outputName = entry_outputName.get() #set name of output, or set to a default if none given
     if outputName == '':
         outputName = os.path.basename(filename) + "_Compressed"
-
     if not os.path.exists("output"): #make 'output' directory if not present
         os.mkdir("output")
+    
+    subprocess.run(["./compress", f"-t {outputSize}", filename, outputDest, outputName, preset])
 
+    '''
     duration = VideoFileClip(filename).duration
     minSize = (audioBitrate * duration) / 8000
 
@@ -117,10 +113,10 @@ def resize():
     bitrate = ((outputSize * 8000 / duration) - audioBitrate) #get output video bitrate by converting size given in MB to kilobits, divide by length, and account for audio bitrate
 
     #First pass
-    subprocess.run(["ffmpeg.exe", "-y", "-i", filename, "-max_muxing_queue_size", "9999", "-c:v", "libx264", "-preset", preset, "-b:v", f"{bitrate}k", "-pass", "1", 
+    subprocess.run(["ffmpeg", "-y", "-i", filename, "-max_muxing_queue_size", "9999", "-c:v", "libx264", "-preset", preset, "-b:v", f"{bitrate}k", "-pass", "1", 
                     "-vsync", "cfr", "-f", "null", "/dev/null", "&&", '\''], shell=True)
     #Second pass
-    subprocess.run(["ffmpeg.exe", "-i", filename, "-max_muxing_queue_size", "9999", "-c:v", "libx264", "-preset", preset, "-b:v", f"{bitrate}k", "-pass", "2", 
+    subprocess.run(["ffmpeg", "-i", filename, "-max_muxing_queue_size", "9999", "-c:v", "libx264", "-preset", preset, "-b:v", f"{bitrate}k", "-pass", "2", 
                     "-c:a", "aac", "-b:a", f"{audioBitrate}k", f"{outputDest}/{outputName}.mp4"], shell=True)
 
     # First pass: ffmpeg -y -i input -max_muxing_queue_size 9999 -c:v libx264 -b:v 2600k -pass 1 -an -f null /dev/null && \
@@ -128,6 +124,7 @@ def resize():
 
     print("------------------")
     print("Video compressed!")
+    '''
 
 def execute():
     outputSize = entry_outputSize.get()
@@ -138,12 +135,12 @@ def execute():
 def concatenate():
     global outputDest
     outputName = entry_outputName.get()
-    #subprocess.run(["ffmpeg.exe", "-i", f"{filename}", "-c", "copy", "intermediate1.ts"], shell=True) #make temp file 1
-    #subprocess.run(["ffmpeg.exe", "-i", f"{filename2}", "-c", "copy", "intermediate2.ts"], shell=True) #make temp file 2
-    #subprocess.run(["ffmpeg.exe", "-i", "\"concat:intermediate1.ts|intermediate2.ts\"", "-c", "copy", f"{outputDest}/{outputName}.mp4"], shell=True) #runs concat command
+    #subprocess.run(["ffmpeg", "-i", f"{filename}", "-c", "copy", "intermediate1.ts"], shell=True) #make temp file 1
+    #subprocess.run(["ffmpeg", "-i", f"{filename2}", "-c", "copy", "intermediate2.ts"], shell=True) #make temp file 2
+    #subprocess.run(["ffmpeg", "-i", "\"concat:intermediate1.ts|intermediate2.ts\"", "-c", "copy", f"{outputDest}/{outputName}.mp4"], shell=True) #runs concat command
     subprocess.run(["mkfifo temp1 temp2"], shell=True)
-    subprocess.run([f"ffmpeg.exe -y -i {filename} -c copy -bsf:v h264_mp4toannexb -f mpegts temp1 2> /dev/null & \ "], shell=True)
-    subprocess.run([f"ffmpeg.exe -y -i {filename2} -c copy -bsf:v h264_mp4toannexb -f mpegts temp2 2> /dev/null & \ "], shell=True)
+    subprocess.run([f"ffmpeg -y -i {filename} -c copy -bsf:v h264_mp4toannexb -f mpegts temp1 2> /dev/null & \ "], shell=True)
+    subprocess.run([f"ffmpeg -y -i {filename2} -c copy -bsf:v h264_mp4toannexb -f mpegts temp2 2> /dev/null & \ "], shell=True)
     subprocess.run([f"ffmpeg -f mpegts -i \"concat:temp1|temp2\" -c copy -bsf:a aac_adtstoasc {outputDest}/{outputName}.mp4"], shell=True)
 
 # Create the root window

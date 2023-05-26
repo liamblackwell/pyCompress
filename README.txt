@@ -1,5 +1,5 @@
-A python application for smallifying uncompressed video files.
-Should work with any video (tested with MP4 and WebM)
+A python application for smallifying video files.
+'Should' work with any video (tested with MP4, WebM, AVI)
 
 Run pyCompress.exe. A command prompt window will pop up as well.
 
@@ -28,7 +28,7 @@ Added video concatenation
 v2.1:
 Added a fix for "Conversion failed" and "Frames left in buffer" issues
 Added a check for the requested output size being too small. Displays this minimum in a printout if triggered.
-Output name is no longer a compulsory field - if none is given it will simply give it the input name + "_Compressed"
+Output name is no longer a compulsory field - if none is given it will simply give it the name + "_Compressed"
 
 v2:
 Added size specification - program performs 2-pass encoding to reach a specified output size, if one is provided.
