@@ -3,8 +3,8 @@ from sys import exit
 from os import path, mkdir
 from ctypes import CDLL
 
-compressPath = "./c_files/compress.so"
-compress = CDLL(compressPath)
+libPath = "./c_files/compress.so"
+compress = CDLL(libPath)
 
 if not path.exists("output"):
         mkdir("output")
