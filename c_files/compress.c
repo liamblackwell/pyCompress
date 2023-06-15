@@ -11,36 +11,25 @@ int qFlag = 0;
 //Calls ffmpeg to compress with preset 'preset' without providing target size, just requires one call/pass
 int simple(char * input, char * outputPath, char * outputName, char * preset) 
 {
-	struct timeval start;
-    struct timeval end;
-    gettimeofday(&start, NULL);
 	char command[256];
-	/*if(qFlag) sprintf(command, "ffmpeg -y -nostats -loglevel warning -i %s -c:v libx264\
+	if(qFlag) sprintf(command, "ffmpeg -y -nostats -loglevel warning -i %s -c:v libx264\
 	 -preset %s -crf 22 -c:a copy %s/%s.mp4", input, preset, outputPath, outputName);
-	else*/ sprintf(command, "ffmpeg -y -i %s -c:v libx264 -preset %s -crf 22 -c:a copy %s/%s.mp4", input, preset, outputPath, outputName);
+	else sprintf(command, "ffmpeg -y -i %s -c:v libx264 -preset %s -crf 22 -c:a copy %s/%s.mp4", input, preset, outputPath, outputName);
 	
 	printf("Compressing video...\n");
 	if(system(command) < 0) {
 		printf("Error in simplecompress\n");
 		return -1;
 	}
-    gettimeofday(&end, NULL);
-    double duration = (double)end.tv_sec + (double)end.tv_usec/1000000 - ((double)start.tv_sec + (double)start.tv_usec/1000000); 
-	printf("Video compressed in %.4fs, hopefully :)\n", duration);
 	return 1;
 }
 
 //Calls ffmpeg to compress with preset 'preset' to target size (MB), using two passes
 int twoPass(char * input, char * outputPath, char * outputName, double targetSize, char * preset) 
 {
-	struct timeval start;
-    struct timeval end;
-    gettimeofday(&start, NULL);
-	printf("input len %li\n", strlen(input));
-
-	//TODO
+	//get video duration
 	unsigned long videoLength = videoinfo_duration(input); 
-	//TODO
+	//TODO maybe
 	long audioBitrate = 128; 
 	//minimum size of video
 	double minSize = (audioBitrate * videoLength) / 8000;
@@ -55,18 +44,11 @@ int twoPass(char * input, char * outputPath, char * outputName, double targetSiz
 
 	char firstPass[256];
 	char secondPass[256];
-	/*if(qFlag) {
-		sprintf(firstPass, "ffmpeg -y -nostats -loglevel warning -i %s -max_muxing_queue_size 9999 -c:v libx264 \
-			-preset %s -b:v %lik -pass 1 -vsync cfr -f null /dev/null && \\", input, preset, outputBitrate);
-		sprintf(secondPass, "ffmpeg -nostats -loglevel warning -i %s -max_muxing_queue_size 9999 -c:v libx264 \
-			-preset %s -b:v %lik -pass 2 -c:a aac -b:a %lik %s/%s.mp4", input, preset, outputBitrate, audioBitrate, outputPath, outputName);
-	}
-	else */{
-		sprintf(firstPass, "ffmpeg -y -i %s -max_muxing_queue_size 9999 -c:v libx264 \
-			-preset %s -b:v %lik -pass 1 -vsync cfr -f null /dev/null && \\", input, preset, outputBitrate);
-		sprintf(secondPass, "ffmpeg -i %s -max_muxing_queue_size 9999 -c:v libx264 \
-			-preset %s -b:v %lik -pass 2 -c:a aac -b:a %lik %s/%s.mp4", input, preset, outputBitrate, audioBitrate, outputPath, outputName);
-	}
+	char * quiet = (qFlag ? "-nostats -loglevel warning" : " ");
+	sprintf(firstPass, "ffmpeg -y %s -i %s -max_muxing_queue_size 9999 -c:v libx264 \
+		-preset %s -b:v %lik -pass 1 -vsync cfr -f null /dev/null && \\", quiet, input, preset, outputBitrate);
+	sprintf(secondPass, "ffmpeg %s -i %s -max_muxing_queue_size 9999 -c:v libx264 \
+		-preset %s -b:v %lik -pass 2 -c:a aac -b:a %lik %s/%s.mp4", quiet, input, preset, outputBitrate, audioBitrate, outputPath, outputName);
 
 	printf("Compressing video...\n");
 	printf("\tRunning %s\n", firstPass);
@@ -79,9 +61,6 @@ int twoPass(char * input, char * outputPath, char * outputName, double targetSiz
 		printf("Error in second pass\n");
 		return -1;
 	}
-    gettimeofday(&end, NULL);
-    double duration = (double)end.tv_sec + (double)end.tv_usec/1000000 - ((double)start.tv_sec + (double)start.tv_usec/1000000); 
-	printf("Video compressed in %.4fs, hopefully :)\n", duration);
 	return 1;
 }
 
