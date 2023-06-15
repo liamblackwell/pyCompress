@@ -10,13 +10,14 @@ LIB = compress.so
 
 #Compilation variables
 C11	= gcc -std=c11
-CFLAGS	= -Wall -Werror -pedantic -fpic -O3  #Compile with all warnings to be careful, and -fpic for library comp, and optimization flag 03
+CFLAGS	= -Wall -Werror -pedantic -fpic -O3  #Compile with all warnings to be careful, and -fpic for library comp, and optimization flag O3
 LIBFLAGS = -shared
 
 #Rules for making - to use on cli with 'make [rule]'
 all: $(LIB) $(PROJECT) $(TEST) clean
-test: $(TEST)
-lib: $(LIB)
+exe: $(PROJECT) clean
+test: $(TEST) clean
+lib: $(LIB) clean
 
 $(TEST): $(TOBJ)
 	$(C11) $(CFLAGS) -o $(TEST) $(TOBJ)
