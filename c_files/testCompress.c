@@ -1,12 +1,11 @@
 //Automatically tests fucntionality of compress.c
 //Must be in the same directory as compress.c and a video named test.mp4
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/time.h>
+#include "compress.h"
 #include <sys/stat.h>
-#include <string.h>
+
+int qFlag = 0; //Flag for setting quiet output
+int kFlag = 0; //Flag for keeping output file
 
 //Test the execution of the simpleCompress function in compress.c
 int testSimpleCompress() 
@@ -23,7 +22,8 @@ int testSimpleCompress()
     long inputSize = statbuf.st_size;
     //Execute compress
     char command[256];
-    sprintf(command, "./compress %s %s %s %s", input, outputPath, outputName, preset);
+    char * quiet = (qFlag ? "-q" : " "); //slip in the quiet flag to call, if set
+    sprintf(command, "./compress %s %s %s %s %s", quiet, input, outputPath, outputName, preset);
     puts("Test: Calling ./compress");
     if(system(command) == -1) {
         puts("Test: Error in system call");
@@ -56,12 +56,15 @@ int testCompress() {
     struct stat statbuf; //for use of stat to test input and output size
     stat(input, &statbuf);
     long inputSize = statbuf.st_size;
-    long targetSize = inputSize / 2;
+    long targetSize = 1; //(long)((double)inputSize / 2000000.0);
+    printf("inputbytes %li targetMB %li\n", inputSize, targetSize);
 
     //Execute compress
     char command[256];
-    sprintf(command, "./compress -t %li %s %s %s %s", targetSize, input, outputPath, outputName, preset);
+    char * quiet = (qFlag ? "-q" : " "); //slip in the quiet flag to call, if set
+    sprintf(command, "./compress %s -t %li %s %s %s %s", quiet, targetSize, input, outputPath, outputName, preset);
     puts("Test: Calling ./compress");
+    puts(command);
     if(system(command) == -1) {
         puts("Test: Error in system call");
         return 0;
@@ -75,14 +78,43 @@ int testCompress() {
 
     stat(output, &statbuf);
     long outputSize = statbuf.st_size;
-    printf("\t-Output %liKB smaller than target\n", (targetSize - outputSize)/1000);
-    remove(output);
-    puts("Test: output file deleted.");
+    printf("targetSize %li outputSize %li\n", targetSize, outputSize);
+    printf("\t-Output %liKB smaller than target, %liKB smaller than input\n", (targetSize*1000000 - outputSize)/1000, (inputSize - outputSize)/1000);
+    if(!kFlag) {
+        remove(output);
+        puts("Test: output file deleted.");
+    }
     return 1;
 }
 
-int main()
+int main(int argc, char ** argv)
 {
+    //Handle option flags with getopt
+	int flag;
+	while ((flag = getopt(argc, argv, "qk")) != -1) {
+		switch (flag) {
+		case 'k':
+			kFlag = 1;
+			break;
+		case 'q':
+			qFlag = 1;
+			break;
+		case '?':
+			if(optopt == 't') fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+			else if(isprint(optopt)) fprintf (stderr, "Unknown option '-%c'.\n", optopt);
+			else fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+			return 1;
+		default:
+			abort();
+		}
+	}
+
+	//Validate arg count
+	if(argc - optind != 0) {
+		fprintf(stderr, "Error: test program expected 0 non-opt arguments, but instead received %i\n", argc-optind);
+		exit(EXIT_FAILURE);
+	}
+
     //Create time benchmarking structs
     struct timeval mainStart;
     struct timeval testStart;
@@ -91,7 +123,7 @@ int main()
 
     //Compile files to be tested with makefile
     printf("Make-ing.\n");
-    if(system("make") == -1) { //catch makefile exiting w/ error
+    if(system("make exe") == -1) { //catch makefile exiting w/ error
         printf("\tTest encountered error in compilation - exiting.\n");
         exit(EXIT_FAILURE);
     }
