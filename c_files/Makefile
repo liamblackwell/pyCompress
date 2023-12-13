@@ -4,13 +4,13 @@
 PROJECT	= compress
 HEADERS	= $(PROJECT).h
 OBJ	= compress.o videoInfo.o
-TOBJ = testCompress.o
+TOBJ = testCompress.o $(OBJ)
 TEST = testCompress
 LIB = compress.so
 
 #Compilation variables
 C11	= gcc -std=c11
-CFLAGS	= -Wall -Werror -pedantic -fpic -O3  #Compile with all warnings to be careful, and -fpic for library comp, and optimization flag O3
+CFLAGS	= -Wall -Werror -pedantic -fpic -O3 -g #Compile with all warn/err checks, and -fpic for library comp, and optimization flag O3
 LIBFLAGS = -shared
 
 #Rules for making - to use on cli with 'make [rule]'
@@ -34,7 +34,7 @@ compress.o: compress.c videoInfo.c $(HEADERS)
 videoInfo.o: videoInfo.c $(HEADERS)
 		$(C11) $(CFLAGS) -c videoInfo.c
 
-testCompress.o: testCompress.c
+testCompress.o: testCompress.c compress.c videoInfo.c
 		$(C11) $(CFLAGS) -c testCompress.c
 
 clean:

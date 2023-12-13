@@ -46,6 +46,7 @@ def compressButton():
     global outputDest
     outputDestClean = outputDest.replace(' ', '\ ').encode()
     outputSize = entry_outputSize.get()
+    print(f"outputSize = {outputSize}")
     preset = presetVar.get().encode()
     for filename in input:
         filenameClean = filename.replace(' ', '\ ').encode()
@@ -60,6 +61,7 @@ def compressButton():
             return
         
         if (not outputSize == '') and float(outputSize) > 0.0:
+            print(f"calling twoPass({filenameClean}, {outputDestClean}, {outputName}, {outputSize}, {preset})")
             compress.twoPass(filenameClean, outputDestClean, outputName, outputSize, preset)
         else: compress.simple(filenameClean, outputDestClean, outputName, preset)
 
